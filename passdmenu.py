@@ -94,8 +94,8 @@ def get_pass_output(gpg_file, path=PASS, store=STORE):
 def main():
     parser = argparse.ArgumentParser(
         description="A dmenu frontend to pass." +
-        "All passed arguments not listed below, are passed to dmenu." +
-        "Requires xclip in default mode.")
+        " All passed arguments not listed below, are passed to dmenu." +
+        " Requires xclip in default mode.")
     parser.add_argument('-t', '--type', dest='autotype', action='store_true',
                         help='Use xdotool to type the username and/or' +
                         ' password into the currently active window.')

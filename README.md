@@ -8,8 +8,8 @@ Currently only tested with Python 3.4.
     usage: passdmenu.py [-h] [-t] [-r] [-u] [-P] [-s STORE] [-B PASS_BIN]
                      [-D DMENU_BIN]
     
-    A dmenu frontend to pass.All passed arguments not listed below, are passed to
-    dmenu.Requires xclip in default mode.
+    A dmenu frontend to pass. All passed arguments not listed below, are passed to
+    dmenu. Requires xclip in default mode.
     
     optional arguments:
       -h, --help            show this help message and exit

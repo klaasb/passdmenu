@@ -33,7 +33,7 @@ def dmenu(choices, args=[], path=DMENU):
                              stdout=subprocess.PIPE)
     choice_lines = '\n'.join(map(str, choices))
     choice, errors = dmenu.communicate(choice_lines.encode('utf-8'))
-    if dmenu.returncode != 0:
+    if dmenu.returncode not in [0, 1]:
         print("dmenu returned {} and error:\n{}"
               .format(dmenu.returncode, errors.decode('utf-8')),
               file=sys.stderr)

@@ -5,6 +5,13 @@ A small python frontend to [pass](http://www.passwordstore.org) wrapping [dmenu]
 
 Currently only tested with Python 3.4.
 
+Example usage as [i3](http://i3wm.org) keybindings:
+
+    bindsym $mod+Shift+i exec passdmenu.py -P -fn "Droid Sans Mono-10"
+    bindsym $mod+Mod1+i exec passdmenu.py -uPt -fn "Droid Sans Mono-10"
+
+Help:
+
     usage: passdmenu.py [-h] [-t] [-r] [-u] [-P] [-s STORE] [-B PASS_BIN]
                      [-D DMENU_BIN]
     

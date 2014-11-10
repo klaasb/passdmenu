@@ -75,17 +75,17 @@ def get_pass_output(gpg_file, path=PASS, store=STORE):
         sys.exit(1)
     output = output.decode('utf-8').split('\n')
     password = None
-    if output.size:
+    if len(output) > 0:
         password = output[0]
     user = None
-    if output.size > 1:
+    if len(output) > 1:
         userline = output[1].split()
-        if userline.size > 1:
+        if len(userline) > 1:
             # assume the first 'word' after some prefix is the username
             # TODO any better, reasonable assumption for lines
             # with more 'words'?
             user = userline[1]
-        elif userline.size == 1:
+        elif len(userline) == 1:
             # assume the user has no 'User: ' prefix or similar
             user = userline[0]
     return user, password

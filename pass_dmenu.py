@@ -1,0 +1,168 @@
+#!/usr/bin/env python3
+
+import sys
+import os
+import os.path as path
+import subprocess
+import shutil
+import argparse
+
+
+XCLIP = shutil.which('xclip')
+XDOTOOL = shutil.which('xdotool')
+DMENU = shutil.which('dmenu')
+PASS = shutil.which('pass')
+STORE = path.normpath(path.expanduser('~/.password-store'))
+
+
+def check_output(args):
+    output = subprocess.check_output(args)
+    output = output.decode('utf-8').split('\n')
+    return output
+
+
+def dmenu(choices, args=[], path=DMENU):
+    """
+    Displays a menu with the given choices by executing dmenu
+    with the provided list of arguments. Returns the selected choice
+    or None if the menu was aborted.
+    """
+    dmenu = subprocess.Popen([path] + args,
+                             stdin=subprocess.PIPE,
+                             stderr=subprocess.PIPE,
+                             stdout=subprocess.PIPE)
+    choice_lines = '\n'.join(map(str, choices))
+    choice, errors = dmenu.communicate(choice_lines.encode('utf-8'))
+    if dmenu.returncode != 0:
+        print("dmenu returned {} and error:\n{}"
+              .format(dmenu.returncode, errors.decode('utf-8')),
+              file=sys.stderr)
+        sys.exit(1)
+    choice = choice.decode('utf-8').rstrip()
+    return choice if choice in choices else None
+
+
+def collect_choices(store):
+    choices = []
+    for dirpath, dirs, files in os.walk(store, followlinks=True):
+        dirsubpath = dirpath[len(store):].lstrip('/')
+        for f in files:
+            if f.endswith('.gpg'):
+                choices += [os.path.join(dirsubpath, f[:-4])]
+    return choices
+
+
+def xdotool(entries, press_return):
+    window = check_output([XDOTOOL, "getactivewindow"])[0]
+    for entry in entries[:-1]:
+        check_output([XDOTOOL, "type", "--window", window, entry])
+        check_output([XDOTOOL, "key", "--window", window, "Tab"])
+    check_output([XDOTOOL, "type", "--window", window, entries[-1]])
+    if press_return:
+        check_output([XDOTOOL, "key", "--window", window, "Return"])
+
+
+def get_pass_output(gpg_file, path=PASS, store=STORE):
+    environ = os.environ.copy()
+    environ["PASSWORD_STORE_DIR"] = store
+    passp = subprocess.Popen([path, gpg_file], env=environ,
+                             stderr=subprocess.PIPE,
+                             stdout=subprocess.PIPE)
+    output, err = passp.communicate()
+    if passp.returncode != 0:
+        print("pass returned {} and error:\n{}".format(
+            passp.returncode, err.decode('utf-8')), file=sys.stderr)
+        sys.exit(1)
+    output = output.decode('utf-8').split('\n')
+    password = None
+    if output.size:
+        password = output[0]
+    user = None
+    if output.size > 1:
+        userline = output[1].split()
+        if userline.size > 1:
+            # assume the first 'word' after some prefix is the username
+            # TODO any better, reasonable assumption for lines
+            # with more 'words'?
+            user = userline[1]
+        elif userline.size == 1:
+            # assume the user has no 'User: ' prefix or similar
+            user = userline[0]
+    return user, password
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="A dmenu frontend to pass.")
+    parser.add_argument('-r', '--return', dest='press_return',
+                        action='store_true',
+                        help='Presses "Return" after typing. Forces --type.')
+    parser.add_argument('-t', '--type', dest='autotype', action='store_true',
+                        help='Use xdotool to type the username and/or' +
+                        ' password into the currently active window.')
+    parser.add_argument('-u', '--user', dest="get_user", action='store_true',
+                        help='Copy/type the username.')
+    parser.add_argument('-P', '--pass', dest="get_pass", action='store_true',
+                        help='Copy/type the password. ' +
+                        'Default, add to -u to copy both.')
+    parser.add_argument('-s', '--store', dest="store", default=STORE,
+                        help='The path to the pass password store.')
+    parser.add_argument('-B', '--bin', dest="pass_bin", default=PASS,
+                        help='The path to the pass binary/wrapper.')
+
+    args, unknown_args = parser.parse_known_args()
+
+    if not args.get_user and not args.get_pass:
+        args.get_user = True
+
+    if args.press_return:
+        args.autotype = True
+
+    dmenu_opts = ["-p"]
+
+    if args.autotype:
+        if XDOTOOL is None:
+            print("You need to install xdotool.", file=sys.stderr)
+            sys.exit(1)
+        dmenu_opts += ["type"]
+    else:
+        if XCLIP is None:
+            print("You need to install xclip.", file=sys.stderr)
+            sys.exit(1)
+        dmenu_opts += ["copy"]
+
+    dmenu_opts += unknown_args
+    # make sure the password store exists
+    if not os.path.isdir(args.store):
+        print("The password store location, " + args.store +
+              ", does not exist.", file=sys.stderr)
+        sys.exit(1)
+    if shutil.which(args.pass_bin) is None:
+        print("The pass binary, {}, does not exist or is not executable."
+              .format(args.pass_bin), file=sys.stderr)
+        sys.exit(1)
+
+    choices = collect_choices(args.store)
+    choice = dmenu(choices, dmenu_opts)
+    # Check if user aborted
+    if choice is None:
+        sys.exit(0)
+    user, pw = get_pass_output(choice, args.pass_bin, args.store)
+
+    info = []
+    if args.get_user and user is not None:
+        info += [user]
+    if args.get_pass and pw is not None:
+        info += [pw]
+
+    if args.autotype:
+        xdotool(info, args.press_return)
+    else:
+        clip = '\n'.join(info)
+        xclip = subprocess.Popen([XCLIP], stdin=subprocess.PIPE)
+        xclip.communicate(clip.encode('utf-8'))
+        xclip.wait()
+
+
+if __name__ == "__main__":
+    main()

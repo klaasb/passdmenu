@@ -93,22 +93,29 @@ def get_pass_output(gpg_file, path=PASS, store=STORE):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="A dmenu frontend to pass.")
-    parser.add_argument('-r', '--return', dest='press_return',
-                        action='store_true',
-                        help='Presses "Return" after typing. Forces --type.')
+        description="A dmenu frontend to pass." +
+        "All passed arguments not listed below, are passed to dmenu." +
+        "Requires xclip in default mode.")
     parser.add_argument('-t', '--type', dest='autotype', action='store_true',
                         help='Use xdotool to type the username and/or' +
                         ' password into the currently active window.')
+    parser.add_argument('-r', '--return', dest='press_return',
+                        action='store_true',
+                        help='Presses "Return" after typing. Forces --type.')
     parser.add_argument('-u', '--user', dest="get_user", action='store_true',
                         help='Copy/type the username.')
-    parser.add_argument('-P', '--pass', dest="get_pass", action='store_true',
+    parser.add_argument('-P', '--pw', dest="get_pass", action='store_true',
                         help='Copy/type the password. ' +
-                        'Default, add to -u to copy both.')
+                        'Default, use -u -P to copy both username and password.')
     parser.add_argument('-s', '--store', dest="store", default=STORE,
-                        help='The path to the pass password store.')
-    parser.add_argument('-B', '--bin', dest="pass_bin", default=PASS,
-                        help='The path to the pass binary/wrapper.')
+                        help='The path to the pass password store.\n'
+                        + 'Defaults to ~/.password-store')
+    parser.add_argument('-B', '--pass', dest="pass_bin", default=PASS,
+                        help='The path to the pass binary. Defaults to '
+                        + PASS)
+    parser.add_argument('-D', '--dmenu', dest="dmenu_bin", default=DMENU,
+                        help='The path to the dmenu binary. Defaults to '
+                        + DMENU)
 
     args, unknown_args = parser.parse_known_args()
 
@@ -143,7 +150,7 @@ def main():
         sys.exit(1)
 
     choices = collect_choices(args.store)
-    choice = dmenu(choices, dmenu_opts)
+    choice = dmenu(choices, dmenu_opts, args.dmenu_bin)
     # Check if user aborted
     if choice is None:
         sys.exit(0)

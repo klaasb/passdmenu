@@ -107,17 +107,21 @@ def main():
     parser.add_argument('-u', '--user', dest="get_user", action='store_true',
                         help='Copy/type the username.')
     parser.add_argument('-P', '--pw', dest="get_pass", action='store_true',
-                        help='Copy/type the password. ' +
-                        'Default, use -u -P to copy both username and password.')
+                        help='Copy/type the password. Default, use -u -P to '
+                        + 'copy both username and password.')
     parser.add_argument('-s', '--store', dest="store", default=STORE,
                         help='The path to the pass password store.\n'
                         + 'Defaults to ~/.password-store')
     parser.add_argument('-B', '--pass', dest="pass_bin", default=PASS,
-                        help='The path to the pass binary. Defaults to '
-                        + PASS)
+                        help='The path to the pass binary. '
+                        + (('Cannot find a default path to pass, '
+                           + 'you must provide this option.'
+                            if PASS is None else 'Defaults to ' + PASS)))
     parser.add_argument('-D', '--dmenu', dest="dmenu_bin", default=DMENU,
-                        help='The path to the dmenu binary. Defaults to '
-                        + DMENU)
+                        help='The path to the dmenu binary. '
+                        + (('Cannot find a default path to dmenu, '
+                           + 'you must provide this option.'
+                            if DMENU is None else 'Defaults to ' + DMENU)))
 
     args, unknown_args = parser.parse_known_args()
 
@@ -128,6 +132,14 @@ def main():
         args.autotype = True
 
     dmenu_opts = ["-p"]
+
+    if args.pass_bin is None:
+        print("You need to provide a path to pass. See -h for more.",
+              file=sys.stderr)
+
+    if args.dmenu_bin is None:
+        print("You need to provide a path to dmenu. See -h for more.",
+              file=sys.stderr)
 
     if args.autotype:
         if XDOTOOL is None:

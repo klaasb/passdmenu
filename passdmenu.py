@@ -146,7 +146,10 @@ def main():
         if XDOTOOL is None:
             print("You need to install xdotool.", file=sys.stderr)
             sys.exit(1)
-        dmenu_opts += ["type"]
+        if args.press_return:
+            dmenu_opts += ["enter"]
+        else:
+            dmenu_opts += ["type"]
     else:
         if XCLIP is None:
             print("You need to install xclip.", file=sys.stderr)

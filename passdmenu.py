@@ -53,15 +53,16 @@ def collect_choices(store):
 
 
 def xdotool(entries, press_return):
-    commands = ["getactivewindow"]
-    commands += [c for e in entries[:-1] for c in (
+    getwin = "getactivewindow"
+    commands = [c for e in entries[:-1] for c in (
         "type --clearmodifiers '{}'".format(e), "key --clearmodifiers Tab")]
     commands += ["type --clearmodifiers '{}'".format(entries[-1])]
     if press_return:
         commands += ["key --clearmodifiers Return"]
-    subprocess.check_output([XDOTOOL, "-"],
-                            input='\n'.join(commands),
-                            universal_newlines=True)
+    for command in commands:
+        subprocess.check_output([XDOTOOL, "-"],
+                                input='{}\n{}'.format(getwin, command),
+                                universal_newlines=True)
 
 
 def get_pass_output(gpg_file, path=PASS, store=STORE):

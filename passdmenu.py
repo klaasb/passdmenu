@@ -52,13 +52,15 @@ def collect_choices(store):
     return choices
 
 
-def xdotool(entries, press_return):
+def xdotool(entries, press_return, delay):
     getwin = "getactivewindow"
     commands = [c for e in entries[:-1] for c in (
-        "type --clearmodifiers '{}'".format(e), "key --clearmodifiers Tab")]
-    commands += ["type --clearmodifiers '{}'".format(entries[-1])]
+        "type --clearmodifiers --delay '{}' '{}'".format(delay, e),
+        "key --clearmodifiers --delay '{}' Tab".format(delay))]
+    commands += ["type --clearmodifiers --delay '{}' '{}'".format(delay,
+                                                                  entries[-1])]
     if press_return:
-        commands += ["key --clearmodifiers Return"]
+        commands += ["key --clearmodifiers --delay '{}' Return".format(delay)]
     for command in commands:
         subprocess.check_output([XDOTOOL, "-"],
                                 input='{}\n{}'.format(getwin, command),
@@ -113,6 +115,9 @@ def main():
     parser.add_argument('-s', '--store', dest="store", default=STORE,
                         help='The path to the pass password store.\n' +
                         'Defaults to ~/.password-store')
+    parser.add_argument('-d', '--delay', dest="xdo_delay", default=None,
+                        help='The delay between keystrokes. ' +
+                        'Defaults to xdotool\'s default.')
     parser.add_argument('-B', '--pass', dest="pass_bin", default=PASS,
                         help='The path to the pass binary. ' +
                         ('Cannot find a default path to pass, ' +
@@ -181,7 +186,7 @@ def main():
         info += [pw]
 
     if args.autotype:
-        xdotool(info, args.press_return)
+        xdotool(info, args.press_return, args.xdo_delay)
     else:
         clip = '\n'.join(info)
         xclip = subprocess.Popen([XCLIP], stdin=subprocess.PIPE)

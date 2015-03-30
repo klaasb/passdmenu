@@ -97,10 +97,12 @@ def get_pass_output(gpg_file, path=PASS, store=STORE):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="A dmenu frontend to pass." +
-        " All passed arguments not listed below, are passed to dmenu." +
-        " Requires xclip in default mode.")
+    desc = ("A dmenu frontend to pass."
+            " All passed arguments not listed below, are passed to dmenu."
+            " If you need to pass arguments to dmenu which are in conflict"
+            " with the options below, place them after --."
+            " Requires xclip in default mode.")
+    parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('-t', '--type', dest='autotype', action='store_true',
                         help='Use xdotool to type the username and/or' +
                         ' password into the currently active window.')
@@ -129,7 +131,16 @@ def main():
                          'you must provide this option.'
                          if DMENU is None else 'Defaults to ' + DMENU))
 
-    args, unknown_args = parser.parse_known_args()
+    split_args = [[]]
+    curr_args = split_args[0]
+    for arg in sys.argv[1:]:
+        if arg == "--":
+            split_args.append([])
+            curr_args = split_args[-1]
+            continue
+        curr_args.append(arg)
+
+    args, unknown_args = parser.parse_known_args(args=split_args[0])
 
     if not args.get_user and not args.get_pass:
         args.get_user = True
@@ -139,18 +150,21 @@ def main():
 
     dmenu_opts = ["-p"]
 
+    error = False
     if args.pass_bin is None:
         print("You need to provide a path to pass. See -h for more.",
               file=sys.stderr)
+        error = True
 
     if args.dmenu_bin is None:
         print("You need to provide a path to dmenu. See -h for more.",
               file=sys.stderr)
+        error = True
 
     if args.autotype:
         if XDOTOOL is None:
             print("You need to install xdotool.", file=sys.stderr)
-            sys.exit(1)
+            error = True
         if args.press_return:
             dmenu_opts += ["enter"]
         else:
@@ -158,19 +172,26 @@ def main():
     else:
         if XCLIP is None:
             print("You need to install xclip.", file=sys.stderr)
-            sys.exit(1)
+            error = True
         dmenu_opts += ["copy"]
 
-    dmenu_opts += unknown_args
     # make sure the password store exists
     if not os.path.isdir(args.store):
         print("The password store location, " + args.store +
               ", does not exist.", file=sys.stderr)
-        sys.exit(1)
+        error = True
     if shutil.which(args.pass_bin) is None:
         print("The pass binary, {}, does not exist or is not executable."
               .format(args.pass_bin), file=sys.stderr)
+        error = True
+
+    if error:
         sys.exit(1)
+
+    dmenu_opts += unknown_args
+    # XXX for now, append all split off argument lists to dmenu's args
+    for arg_list in split_args[1:]:
+        dmenu_opts += arg_list
 
     choices = collect_choices(args.store)
     choice = dmenu(choices, dmenu_opts, args.dmenu_bin)

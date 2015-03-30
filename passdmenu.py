@@ -152,7 +152,7 @@ def main():
     args, unknown_args = parser.parse_known_args(args=split_args[0])
 
     if not args.get_user and not args.get_pass:
-        args.get_user = True
+        args.get_pass = True
 
     if args.press_return:
         args.autotype = True

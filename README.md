@@ -16,7 +16,8 @@ Help:
                         [-B PASS_BIN] [-D DMENU_BIN]
     
     A dmenu frontend to pass. All passed arguments not listed below, are passed to
-    dmenu. Requires xclip in default mode.
+    dmenu. If you need to pass arguments to dmenu which are in conflict with the
+    options below, place them after --. Requires xclip in default mode.
     
     optional arguments:
       -h, --help            show this help message and exit

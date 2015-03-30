@@ -52,18 +52,27 @@ def collect_choices(store):
     return choices
 
 
-def xdotool(entries, press_return, delay):
-    getwin = "getactivewindow"
+def xdotool(entries, press_return, delay=None, window_id=None):
+    getwin = ""
+    always_opts = "--clearmodifiers"
+    if delay:
+        always_opts += " --delay '{}'".format(delay)
+    if not window_id:
+        getwin = "getactivewindow\n"
+    else:
+        always_opts += " --window {}".format(window_id)
+
     commands = [c for e in entries[:-1] for c in (
-        "type --clearmodifiers --delay '{}' '{}'".format(delay, e),
-        "key --clearmodifiers --delay '{}' Tab".format(delay))]
-    commands += ["type --clearmodifiers --delay '{}' '{}'".format(delay,
-                                                                  entries[-1])]
+        "type {} '{}'".format(always_opts, e),
+        always_opts + " Tab")]
+    if len(entries) > 0:
+        commands += ["type {} '{}'".format(always_opts, entries[-1])]
     if press_return:
-        commands += ["key --clearmodifiers --delay '{}' Return".format(delay)]
+        commands += ["key {} Return".format(always_opts)]
     for command in commands:
+        input_text = "{}{}".format(getwin, command)
         subprocess.check_output([XDOTOOL, "-"],
-                                input='{}\n{}'.format(getwin, command),
+                                input=input_text,
                                 universal_newlines=True)
 
 
@@ -193,6 +202,11 @@ def main():
     for arg_list in split_args[1:]:
         dmenu_opts += arg_list
 
+    # get active window id now, it may change between dmenu/rofi and xdotool?
+    window_id = None
+    if args.autotype:
+        window_id = check_output([XDOTOOL, 'getactivewindow'])[0]
+
     choices = collect_choices(args.store)
     choice = dmenu(choices, dmenu_opts, args.dmenu_bin)
     # Check if user aborted
@@ -207,7 +221,7 @@ def main():
         info += [pw]
 
     if args.autotype:
-        xdotool(info, args.press_return, args.xdo_delay)
+        xdotool(info, args.press_return, args.xdo_delay, window_id)
     else:
         clip = '\n'.join(info)
         xclip = subprocess.Popen([XCLIP], stdin=subprocess.PIPE)

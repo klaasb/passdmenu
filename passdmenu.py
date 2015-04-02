@@ -64,7 +64,7 @@ def xdotool(entries, press_return, delay=None, window_id=None):
 
     commands = [c for e in entries[:-1] for c in (
         "type {} '{}'".format(always_opts, e),
-        always_opts + " Tab")]
+        "key {} Tab".format(always_opts))]
     if len(entries) > 0:
         commands += ["type {} '{}'".format(always_opts, entries[-1])]
     if press_return:

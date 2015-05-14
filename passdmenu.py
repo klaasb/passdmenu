@@ -13,6 +13,16 @@ XDOTOOL = shutil.which('xdotool')
 DMENU = shutil.which('dmenu')
 PASS = shutil.which('pass')
 STORE = path.normpath(path.expanduser('~/.password-store'))
+XSEL_PRIMARY = "primary"
+
+
+def get_xselection(selection):
+    if not selection:  # empty or None
+        return None
+    for option in [XSEL_PRIMARY, "secondary", "clipboard"]:
+        if option[:len(selection)] == selection:
+            return option
+    return None
 
 
 def check_output(args):
@@ -139,6 +149,12 @@ def main():
                         ('Cannot find a default path to dmenu, ' +
                          'you must provide this option.'
                          if DMENU is None else 'Defaults to ' + DMENU))
+    parser.add_argument('-x', '--xsel', dest="xsel", default=XSEL_PRIMARY,
+                        help=('The X selections into which to copy the '
+                              'username/password. Possible values are comma-'
+                              'separated lists of prefixes of: '
+                              'primary, secondary, clipboard. E.g. -x p,s,c. '
+                              'Defaults to primary.'))
 
     split_args = [[]]
     curr_args = split_args[0]
@@ -224,9 +240,16 @@ def main():
         xdotool(info, args.press_return, args.xdo_delay, window_id)
     else:
         clip = '\n'.join(info)
-        xclip = subprocess.Popen([XCLIP], stdin=subprocess.PIPE)
-        xclip.communicate(clip.encode('utf-8'))
-        xclip.wait()
+        for selection in args.xsel.split(','):
+            xsel_arg = get_xselection(selection)
+            if xsel_arg:
+                xclip = subprocess.Popen([XCLIP, "-selection", xsel_arg],
+                                         stdin=subprocess.PIPE)
+                xclip.communicate(clip.encode('utf-8'))
+                xclip.wait()
+            else:
+                print("Warning: Invalid xselection argument: {}."
+                      .format(selection), file=sys.stderr)
 
 
 if __name__ == "__main__":

@@ -127,6 +127,10 @@ def main():
             " with the options below, place them after --."
             " Requires xclip in default mode.")
     parser = argparse.ArgumentParser(description=desc)
+    parser.add_argument('-c', '--copy', dest='copy', action='store_true',
+                        help=('Use xclip to copy the username and/or '
+                              'password into the primary/specified '
+                              'xselection(s).'))
     parser.add_argument('-t', '--type', dest='autotype', action='store_true',
                         help='Use xdotool to type the username and/or' +
                         ' password into the currently active window.')
@@ -180,6 +184,9 @@ def main():
     if args.press_return:
         args.autotype = True
 
+    if not args.autotype:
+        args.copy = True
+
     dmenu_opts = ["-p"]
 
     error = False
@@ -201,7 +208,7 @@ def main():
             dmenu_opts += ["enter"]
         else:
             dmenu_opts += ["type"]
-    else:
+    elif args.copy:
         if XCLIP is None:
             print("You need to install xclip.", file=sys.stderr)
             error = True
@@ -245,7 +252,7 @@ def main():
 
     if args.autotype:
         xdotool(info, args.press_return, args.xdo_delay, window_id)
-    else:
+    elif args.copy:
         clip = '\n'.join(info)
         for selection in args.xsel.split(','):
             xsel_arg = get_xselection(selection)

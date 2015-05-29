@@ -132,34 +132,34 @@ def main():
                               'password into the primary/specified '
                               'xselection(s).'))
     parser.add_argument('-t', '--type', dest='autotype', action='store_true',
-                        help='Use xdotool to type the username and/or' +
-                        ' password into the currently active window.')
+                        help=('Use xdotool to type the username and/or '
+                              'password into the currently active window.'))
     parser.add_argument('-r', '--return', dest='press_return',
                         action='store_true',
                         help='Presses "Return" after typing. Forces --type.')
     parser.add_argument('-u', '--user', dest="get_user", action='store_true',
                         help='Copy/type the username.')
     parser.add_argument('-P', '--pw', dest="get_pass", action='store_true',
-                        help='Copy/type the password. Default, use -u -P to ' +
-                        'copy both username and password.')
+                        help=('Copy/type the password. Default, use -u -P to '
+                              'copy both username and password.'))
     parser.add_argument('-s', '--store', dest="store", default=STORE,
-                        help='The path to the pass password store.\n' +
-                        'Defaults to ~/.password-store')
+                        help=('The path to the pass password store. '
+                              'Defaults to ~/.password-store'))
     parser.add_argument('-d', '--delay', dest="xdo_delay", default=None,
-                        help='The delay between keystrokes. ' +
-                        'Defaults to xdotool\'s default.')
+                        help=('The delay between keystrokes. '
+                              'Defaults to xdotool\'s default.'))
     parser.add_argument('-f', '--filter', dest="filter", default=None,
                         help='A regular expression to filter pass filenames.')
     parser.add_argument('-B', '--pass', dest="pass_bin", default=PASS,
-                        help='The path to the pass binary. ' +
-                        ('Cannot find a default path to pass, ' +
-                         'you must provide this option.'
-                         if PASS is None else 'Defaults to ' + PASS))
+                        help=('The path to the pass binary. '
+                              'Cannot find a default path to pass, '
+                              'you must provide this option.'
+                              if PASS is None else 'Defaults to ' + PASS))
     parser.add_argument('-D', '--dmenu', dest="dmenu_bin", default=DMENU,
-                        help='The path to the dmenu binary. ' +
-                        ('Cannot find a default path to dmenu, ' +
-                         'you must provide this option.'
-                         if DMENU is None else 'Defaults to ' + DMENU))
+                        help=('The path to the dmenu binary. '
+                              'Cannot find a default path to dmenu, '
+                              'you must provide this option.'
+                              if DMENU is None else 'Defaults to ' + DMENU))
     parser.add_argument('-x', '--xsel', dest="xsel", default=XSEL_PRIMARY,
                         help=('The X selections into which to copy the '
                               'username/password. Possible values are comma-'

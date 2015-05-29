@@ -128,12 +128,12 @@ def main():
             " All passed arguments not listed below, are passed to dmenu."
             " If you need to pass arguments to dmenu which are in conflict"
             " with the options below, place them after --."
-            " Requires xclip in default mode.")
+            " Requires xclip in default 'copy' mode.")
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('-c', '--copy', dest='copy', action='store_true',
                         help=('Use xclip to copy the username and/or '
                               'password into the primary/specified '
-                              'xselection(s).'))
+                              'xselection(s). This is the default mode.'))
     parser.add_argument('-t', '--type', dest='autotype', action='store_true',
                         help=('Use xdotool to type the username and/or '
                               'password into the currently active window.'))
@@ -190,8 +190,6 @@ def main():
     if not args.autotype:
         args.copy = True
 
-    dmenu_opts = ["-p"]
-
     error = False
     if args.pass_bin is None:
         print("You need to provide a path to pass. See -h for more.",
@@ -203,19 +201,25 @@ def main():
               file=sys.stderr)
         error = True
 
+    dmenu_opts = ["-p", ""]
     if args.autotype:
         if XDOTOOL is None:
             print("You need to install xdotool.", file=sys.stderr)
             error = True
         if args.press_return:
-            dmenu_opts += ["enter"]
+            dmenu_opts[-1] = "enter"
         else:
-            dmenu_opts += ["type"]
-    elif args.copy:
+            dmenu_opts[-1] = "type"
+
+    if args.copy:
         if XCLIP is None:
             print("You need to install xclip.", file=sys.stderr)
             error = True
-        dmenu_opts += ["copy"]
+        dmenu_opts[-1] += ("," if dmenu_opts[-1] != "" else "") + "copy"
+
+    if args.execute:
+        dmenu_opts[-1] += (("," if dmenu_opts[-1] != "" else "") +
+                           args.execute[args.execute.find('/')+1:])
 
     # make sure the password store exists
     if not os.path.isdir(args.store):
@@ -255,9 +259,11 @@ def main():
         info += [pw]
 
     clip = '\n'.join(info).encode('utf-8')
+
     if args.autotype:
         xdotool(info, args.press_return, args.xdo_delay, window_id)
-    elif args.copy:
+
+    if args.copy:
         for selection in args.xsel.split(','):
             xsel_arg = get_xselection(selection)
             if xsel_arg:

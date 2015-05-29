@@ -43,9 +43,11 @@ def dmenu(choices, args=[], path=DMENU):
                              stdout=subprocess.PIPE)
     choice_lines = '\n'.join(map(str, choices))
     choice, errors = dmenu.communicate(choice_lines.encode('utf-8'))
-    if dmenu.returncode not in [0, 1]:
-        print("dmenu returned {} and error:\n{}"
-              .format(dmenu.returncode, errors.decode('utf-8')),
+    if dmenu.returncode not in [0, 1] \
+       or (dmenu.returncode == 1 and len(errors) != 0):
+        print("'{} {}' returned {} and error:\n{}"
+              .format(path, ' '.join(args), dmenu.returncode,
+                      errors.decode('utf-8')),
               file=sys.stderr)
         sys.exit(1)
     choice = choice.decode('utf-8').rstrip()

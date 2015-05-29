@@ -169,6 +169,15 @@ def main():
                               'separated lists of prefixes of: '
                               'primary, secondary, clipboard. E.g. -x p,s,c. '
                               'Defaults to primary.'))
+    parser.add_argument('-e', '--execute', dest="execute", default=None,
+                        help=('The path to a command to execute. The whole '
+                              'content of the decrypted gpg file from pass '
+                              'is provided to it on standard input. The full '
+                              'password name (within the store) is provided as '
+                              'first parameter. Arguments -s and -f are '
+                              'forwarded as parameters.'
+                              'The command is executed in addition to and '
+                              'after specified -t, -c options are handled.'))
 
     split_args = [[]]
     curr_args = split_args[0]
@@ -187,7 +196,7 @@ def main():
     if args.press_return:
         args.autotype = True
 
-    if not args.autotype:
+    if not args.autotype and not args.execute:
         args.copy = True
 
     error = False
@@ -201,25 +210,29 @@ def main():
               file=sys.stderr)
         error = True
 
-    dmenu_opts = ["-p", ""]
+    prompt = ""
     if args.autotype:
         if XDOTOOL is None:
             print("You need to install xdotool.", file=sys.stderr)
             error = True
         if args.press_return:
-            dmenu_opts[-1] = "enter"
+            prompt = "enter"
         else:
-            dmenu_opts[-1] = "type"
+            prompt = "type"
 
     if args.copy:
         if XCLIP is None:
             print("You need to install xclip.", file=sys.stderr)
             error = True
-        dmenu_opts[-1] += ("," if dmenu_opts[-1] != "" else "") + "copy"
+        prompt += ("," if prompt != "" else "") + "copy"
 
     if args.execute:
-        dmenu_opts[-1] += (("," if dmenu_opts[-1] != "" else "") +
-                           args.execute[args.execute.find('/')+1:])
+        if shutil.which(args.execute) is None:
+            print("The command to execute is not executable or does not exist.")
+            error = True
+        else:
+            prompt += (("," if prompt != "" else "") +
+                       os.path.basename(args.execute))
 
     # make sure the password store exists
     if not os.path.isdir(args.store):
@@ -234,12 +247,12 @@ def main():
     if error:
         sys.exit(1)
 
-    dmenu_opts += unknown_args
+    dmenu_opts = ["-p", prompt] + unknown_args
     # XXX for now, append all split off argument lists to dmenu's args
     for arg_list in split_args[1:]:
         dmenu_opts += arg_list
 
-    # get active window id now, it may change between dmenu/rofi and xdotool?
+    # get active window id now, it may change between dmenu/rofi and xdotool
     window_id = None
     if args.autotype:
         window_id = check_output([XDOTOOL, 'getactivewindow'])[0]
@@ -273,6 +286,19 @@ def main():
             else:
                 print("Warning: Invalid xselection argument: {}."
                       .format(selection), file=sys.stderr)
+    if args.execute:
+        cmd_with_args=([args.execute, choice, "-s", args.store] +
+                       (["-f", args.filter] if args.filter else []))
+        cmd = subprocess.Popen(cmd_with_args, stdin=subprocess.PIPE,
+                               stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+        output, _ = cmd.communicate('\n'.join(pass_output).encode('utf-8'))
+        if cmd.returncode != 0:
+            print("Command {} returned {} and output:\n{}".format(
+                  args.execute, cmd.returncode, output.decode('utf-8')),
+                  file=sys.stderr)
+            sys.exit(1)
+        else:
+            print(output.decode('utf-8'), end='')
 
 
 if __name__ == "__main__":

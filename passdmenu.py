@@ -102,13 +102,16 @@ def get_pass_output(gpg_file, path=PASS, store=STORE):
         print("pass returned {} and error:\n{}".format(
             passp.returncode, err.decode('utf-8')), file=sys.stderr)
         sys.exit(1)
-    output = output.decode('utf-8').split('\n')
+    return output.decode('utf-8').split('\n')
+
+
+def get_user_pw(pass_output):
     password = None
-    if len(output) > 0:
-        password = output[0]
+    if len(pass_output) > 0:
+        password = pass_output[0]
     user = None
-    if len(output) > 1:
-        userline = output[1].split()
+    if len(pass_output) > 1:
+        userline = pass_output[1].split()
         if len(userline) > 1:
             # assume the first 'word' after some prefix is the username
             # TODO any better, reasonable assumption for lines
@@ -242,7 +245,8 @@ def main():
     # Check if user aborted
     if choice is None:
         sys.exit(0)
-    user, pw = get_pass_output(choice, args.pass_bin, args.store)
+    pass_output = get_pass_output(choice, args.pass_bin, args.store)
+    user, pw = get_user_pw(pass_output)
 
     info = []
     if args.get_user and user is not None:

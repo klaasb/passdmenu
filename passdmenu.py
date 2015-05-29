@@ -6,6 +6,7 @@ import os.path as path
 import subprocess
 import shutil
 import argparse
+import re
 
 
 XCLIP = shutil.which('xclip')
@@ -54,13 +55,15 @@ def dmenu(choices, args=[], path=DMENU):
     return choice if choice in choices else None
 
 
-def collect_choices(store):
+def collect_choices(store, regex=None):
     choices = []
     for dirpath, dirs, files in os.walk(store, followlinks=True):
         dirsubpath = dirpath[len(store):].lstrip('/')
         for f in files:
             if f.endswith('.gpg'):
-                choices += [os.path.join(dirsubpath, f[:-4])]
+                full_path = os.path.join(dirsubpath, f[:-4])
+                if not regex or re.match(regex, full_path):
+                    choices += [full_path]
     return choices
 
 
@@ -141,6 +144,8 @@ def main():
     parser.add_argument('-d', '--delay', dest="xdo_delay", default=None,
                         help='The delay between keystrokes. ' +
                         'Defaults to xdotool\'s default.')
+    parser.add_argument('-f', '--filter', dest="filter", default=None,
+                        help='A regular expression to filter pass filenames.')
     parser.add_argument('-B', '--pass', dest="pass_bin", default=PASS,
                         help='The path to the pass binary. ' +
                         ('Cannot find a default path to pass, ' +
@@ -225,7 +230,7 @@ def main():
     if args.autotype:
         window_id = check_output([XDOTOOL, 'getactivewindow'])[0]
 
-    choices = collect_choices(args.store)
+    choices = collect_choices(args.store, args.filter)
     choice = dmenu(choices, dmenu_opts, args.dmenu_bin)
     # Check if user aborted
     if choice is None:

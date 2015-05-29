@@ -254,17 +254,16 @@ def main():
     if args.get_pass and pw is not None:
         info += [pw]
 
+    clip = '\n'.join(info).encode('utf-8')
     if args.autotype:
         xdotool(info, args.press_return, args.xdo_delay, window_id)
     elif args.copy:
-        clip = '\n'.join(info)
         for selection in args.xsel.split(','):
             xsel_arg = get_xselection(selection)
             if xsel_arg:
                 xclip = subprocess.Popen([XCLIP, "-selection", xsel_arg],
                                          stdin=subprocess.PIPE)
-                xclip.communicate(clip.encode('utf-8'))
-                xclip.wait()
+                xclip.communicate(clip)
             else:
                 print("Warning: Invalid xselection argument: {}."
                       .format(selection), file=sys.stderr)

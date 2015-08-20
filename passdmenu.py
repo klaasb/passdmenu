@@ -13,7 +13,8 @@ XCLIP = shutil.which('xclip')
 XDOTOOL = shutil.which('xdotool')
 DMENU = shutil.which('dmenu')
 PASS = shutil.which('pass')
-STORE = path.normpath(path.expanduser('~/.password-store'))
+STORE = os.getenv('PASSWORD_STORE_DIR',
+                  path.normpath(path.expanduser('~/.password-store')))
 XSEL_PRIMARY = "primary"
 
 

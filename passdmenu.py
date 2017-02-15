@@ -105,22 +105,40 @@ def get_pass_output(gpg_file, path=PASS, store=STORE):
         sys.exit(1)
     return output.decode('utf-8').split('\n')
 
+def get_user_second_line(pass_output):
+    userline = pass_output[1].split()
+    user = None
 
-def get_user_pw(pass_output):
+    if len(userline) > 1:
+        # assume the first 'word' after some prefix is the username
+        # TODO any better, reasonable assumption for lines
+        # with more 'words'?
+        user = userline[1]
+    elif len(userline) == 1:
+        # assume the user has no 'User: ' prefix or similar
+        user = userline[0]
+
+    return user
+
+def get_user_by_pattern(pass_output, user_pattern):
+    for line in pass_output[1:]:
+        match = re.match(user_pattern, line)
+        if match and  len(match.groups()) == 1:
+            return match.group(1)
+
+    return None
+
+def get_user_pw(pass_output, user_pattern):
     password = None
     if len(pass_output) > 0:
         password = pass_output[0]
     user = None
     if len(pass_output) > 1:
-        userline = pass_output[1].split()
-        if len(userline) > 1:
-            # assume the first 'word' after some prefix is the username
-            # TODO any better, reasonable assumption for lines
-            # with more 'words'?
-            user = userline[1]
-        elif len(userline) == 1:
-            # assume the user has no 'User: ' prefix or similar
-            user = userline[0]
+        if user_pattern == '':
+            user = get_user_second_line(pass_output)
+        elif user_pattern is not None:
+            user = get_user_by_pattern(pass_output, user_pattern)
+
     return user, password
 
 
@@ -141,8 +159,11 @@ def main():
     parser.add_argument('-r', '--return', dest='press_return',
                         action='store_true',
                         help='Presses "Return" after typing. Forces --type.')
-    parser.add_argument('-u', '--user', dest="get_user", action='store_true',
-                        help='Copy/type the username.')
+    parser.add_argument('-u', '--user', dest="get_user", nargs='?', const='',
+                        default=None,
+                        help='Copy/type the username, possibly search by given '
+                        'python regex pattern that must include a group (the '
+                        'user part). Example pattern: \'^user: (.*)\'')
     parser.add_argument('-P', '--pw', dest="get_pass", action='store_true',
                         help=('Copy/type the password. Default, use -u -P to '
                               'copy both username and password.'))
@@ -191,7 +212,7 @@ def main():
 
     args, unknown_args = parser.parse_known_args(args=split_args[0])
 
-    if not args.get_user and not args.get_pass:
+    if args.get_user is None and not args.get_pass:
         args.get_pass = True
 
     if args.press_return:
@@ -264,13 +285,16 @@ def main():
     if choice is None:
         sys.exit(0)
     pass_output = get_pass_output(choice, args.pass_bin, args.store)
-    user, pw = get_user_pw(pass_output)
+    user, pw = get_user_pw(pass_output, args.get_user)
 
     info = []
-    if args.get_user and user is not None:
+    if user is not None:
         info += [user]
     if args.get_pass and pw is not None:
         info += [pw]
+
+    if len(info) == 0:
+        info = [' ']
 
     clip = '\n'.join(info).encode('utf-8')
 

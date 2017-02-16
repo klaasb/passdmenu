@@ -293,9 +293,6 @@ def main():
     if args.get_pass and pw is not None:
         info += [pw]
 
-    if len(info) == 0:
-        info = [' ']
-
     clip = '\n'.join(info).encode('utf-8')
 
     if args.autotype:

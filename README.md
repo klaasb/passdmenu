@@ -12,9 +12,9 @@ Example usage as [i3](http://i3wm.org) keybindings:
 
 Help:
 
-    usage: passdmenu.py [-h] [-c] [-t] [-r] [-u] [-P] [-s STORE] [-d XDO_DELAY]
-                        [-f FILTER] [-B PASS_BIN] [-D DMENU_BIN] [-x XSEL]
-                        [-e EXECUTE]
+    usage: passdmenu.py [-h] [-c] [-t] [-r] [-u [GET_USER]] [-P] [-s STORE]
+                        [-d XDO_DELAY] [-f FILTER] [-B PASS_BIN] [-D DMENU_BIN]
+                        [-x XSEL] [-e EXECUTE]
     
     A dmenu frontend to pass. All passed arguments not listed below, are passed to
     dmenu. If you need to pass arguments to dmenu which are in conflict with the
@@ -28,7 +28,10 @@ Help:
       -t, --type            Use xdotool to type the username and/or password into
                             the currently active window.
       -r, --return          Presses "Return" after typing. Forces --type.
-      -u, --user            Copy/type the username.
+      -u [GET_USER], --user [GET_USER]
+                            Copy/type the username, possibly search by given
+                            python regex pattern that must include a group (the
+                            user part). Example pattern: '^user: (.*)'
       -P, --pw              Copy/type the password. Default, use -u -P to copy
                             both username and password.
       -s STORE, --store STORE

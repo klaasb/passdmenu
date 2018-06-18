@@ -7,8 +7,8 @@ Currently only tested with Python 3.4.
 
 Example usage as [i3](http://i3wm.org) keybindings:
 
-    bindsym $mod+Shift+i exec passdmenu.py -P -fn "Droid Sans Mono-10"
-    bindsym $mod+Mod1+i exec passdmenu.py -uPt -fn "Droid Sans Mono-10"
+    bindsym $mod+Shift+i exec passdmenu.py -P
+    bindsym $mod+Mod1+i exec passdmenu.py -uPt
 
 Help:
 

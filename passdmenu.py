@@ -128,14 +128,20 @@ def get_user_by_pattern(pass_output, user_pattern):
 
     return None
 
-def get_user_pw(pass_output, user_pattern):
+def get_user_from_filename(gpg_file):
+    return gpg_file.split('/')[-1]
+
+def get_user_pw(pass_output, user_pattern, gpg_file):
     password = None
     if len(pass_output) > 0:
         password = pass_output[0]
     user = None
     if len(pass_output) > 1:
-        if user_pattern == '':
-            user = get_user_second_line(pass_output)
+        if user_pattern == 'filename':
+            user = get_user_from_filename(gpg_file)
+        elif user_pattern == '':
+            user = get_user_second_line(pass_output) or \
+                   get_user_from_filename(gpg_file)
         elif user_pattern is not None:
             user = get_user_by_pattern(pass_output, user_pattern)
 
@@ -163,7 +169,10 @@ def main():
                         default=None,
                         help='Copy/type the username, possibly search by given '
                         'python regex pattern that must include a group (the '
-                        'user part). Example pattern: \'^user: (.*)\'')
+                        'user part). Example pattern: \'^user: (.*)\'. '
+                        'If second line of gpg file is blank or the argument '
+                        '\'filename\' is given then gpg filename is used as '
+                        'username.')
     parser.add_argument('-P', '--pw', dest="get_pass", action='store_true',
                         help=('Copy/type the password. Default, use -u -P to '
                               'copy both username and password.'))
@@ -285,7 +294,7 @@ def main():
     if choice is None:
         sys.exit(0)
     pass_output = get_pass_output(choice, args.pass_bin, args.store)
-    user, pw = get_user_pw(pass_output, args.get_user)
+    user, pw = get_user_pw(pass_output, args.get_user, choice)
 
     info = []
     if user is not None:

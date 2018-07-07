@@ -31,7 +31,9 @@ Help:
       -u [GET_USER], --user [GET_USER]
                             Copy/type the username, possibly search by given
                             python regex pattern that must include a group (the
-                            user part). Example pattern: '^user: (.*)'
+                            user part). Example pattern: '^user: (.*)' If second
+                            line of gpg file is blank or the argument 'filename'
+                            is given then gpg filename is used as username.
       -P, --pw              Copy/type the password. Default, use -u -P to copy
                             both username and password.
       -s STORE, --store STORE
